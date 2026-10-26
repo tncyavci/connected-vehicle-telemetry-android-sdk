@@ -1,0 +1,64 @@
+CREATE TABLE telemetry_frame_entity (
+    vin TEXT NOT NULL,
+    sequence_number INTEGER NOT NULL,
+    timestamp_epoch_ms INTEGER NOT NULL,
+    speed_kmh REAL NOT NULL,
+    battery_soc_percent REAL NOT NULL,
+    estimated_range_km INTEGER NOT NULL,
+    doors_locked INTEGER NOT NULL,
+    hvac_active INTEGER NOT NULL,
+    frame_json TEXT NOT NULL,
+    PRIMARY KEY (vin, sequence_number)
+);
+
+CREATE TABLE pending_command_entity (
+    command_id TEXT NOT NULL PRIMARY KEY,
+    vin TEXT NOT NULL,
+    actuation_type TEXT NOT NULL,
+    issued_at_epoch_ms INTEGER NOT NULL,
+    expires_at_epoch_ms INTEGER NOT NULL,
+    envelope_json TEXT NOT NULL,
+    sync_status TEXT NOT NULL
+);
+
+upsertTelemetryFrame:
+INSERT OR REPLACE INTO telemetry_frame_entity(
+    vin,
+    sequence_number,
+    timestamp_epoch_ms,
+    speed_kmh,
+    battery_soc_percent,
+    estimated_range_km,
+    doors_locked,
+    hvac_active,
+    frame_json
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectLatestFrameForVin:
+SELECT *
+FROM telemetry_frame_entity
+WHERE vin = ?
+ORDER BY sequence_number DESC
+LIMIT 1;
+
+enqueueCommand:
+INSERT OR REPLACE INTO pending_command_entity(
+    command_id,
+    vin,
+    actuation_type,
+    issued_at_epoch_ms,
+    expires_at_epoch_ms,
+    envelope_json,
+    sync_status
+) VALUES (?, ?, ?, ?, ?, ?, ?);
+
+selectPendingCommands:
+SELECT *
+FROM pending_command_entity
+WHERE sync_status = 'PENDING'
+ORDER BY issued_at_epoch_ms ASC;
+
+markCommandDispatched:
+UPDATE pending_command_entity
+SET sync_status = 'DISPATCHED'
+WHERE command_id = ?;
