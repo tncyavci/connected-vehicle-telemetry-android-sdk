@@ -64,44 +64,48 @@ fun ConnectedVehicleCockpitScreen(
                 color = Color(0xFF9CA3AF),
             )
 
-            // Primary Instrument Cluster
+            // Primary Instrument Cluster (120Hz Canvas Radial Gauges)
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF111827)),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Column {
-                        Text("SPEED", style = MaterialTheme.typography.labelSmall, color = Color(0xFF9CA3AF))
-                        Text(
-                            text = "${frame.speedKmh} km/h",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White,
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        AutomotiveRadialGauge(
+                            value = frame.speedKmh,
+                            maxValue = 220.0,
+                            unitLabel = "km/h • ${frame.gearPosition}",
+                            title = "SPEED",
+                            primaryColor = Color(0xFF38BDF8),
                         )
-                        Text("Gear: ${frame.gearPosition} (${frame.rpm} RPM)", style = MaterialTheme.typography.bodySmall)
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("HV BATTERY SoC", style = MaterialTheme.typography.labelSmall, color = Color(0xFF9CA3AF))
-                        Text(
-                            text = "${frame.batterySocPercent}% (${frame.estimatedRangeKm} km)",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF34D399),
-                        )
-                        Text(
-                            text = "Cabin: ${frame.cabinTempCelsius}°C | HV: ${frame.hvBatteryTempCelsius}°C",
-                            style = MaterialTheme.typography.bodySmall,
+                        AutomotiveRadialGauge(
+                            value = frame.batterySocPercent,
+                            maxValue = 100.0,
+                            unitLabel = "% • ${frame.estimatedRangeKm} km",
+                            title = "HV BATTERY",
+                            primaryColor = Color(0xFF34D399),
                         )
                     }
+                    Text(
+                        text = "Powertrain: ${frame.rpm} RPM | Cabin: ${frame.cabinTempCelsius}°C (Target ${frame.hvacTargetTempCelsius}°C) | HV Pack: ${frame.hvBatteryTempCelsius}°C",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF9CA3AF),
+                    )
                 }
             }
+
+            // TPMS 4-Wheel Chassis Diagram
+            TpmsChassisDiagram(tires = frame.tirePressuresBar)
 
             // Safety Interlock Banner
             state.lastSafetyRejectionMessage?.let { msg ->

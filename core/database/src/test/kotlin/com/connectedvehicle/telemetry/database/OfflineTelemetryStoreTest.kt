@@ -61,4 +61,49 @@ class OfflineTelemetryStoreTest {
         val pendingAfter = store.getPendingCommands()
         assertTrue(pendingAfter.isEmpty())
     }
+
+    @Test
+    fun `TelemetryOfflineSyncEngine prunes expired commands and flushes valid commands in FIFO order`() = kotlinx.coroutines.test.runTest {
+        val store = createInMemoryStore()
+        val expiredEnvelope = SignedVehicleCommandEnvelope(
+            command = RemoteVehicleCommand(
+                commandId = "cmd-expired-01",
+                vin = "TR-TOFAS-CONNECT-2026-001",
+                actuationType = RemoteActuationType.UNLOCK_DOORS,
+                issuedAtEpochMs = 1_760_000_000_000L,
+                expiresAtEpochMs = 1_760_000_010_000L,
+                nonceHex = "exp-nonce-01",
+            ),
+            signatureBase64 = "c2lnLTE=",
+            publicKeyId = "key-1",
+        )
+        val validEnvelope = SignedVehicleCommandEnvelope(
+            command = RemoteVehicleCommand(
+                commandId = "cmd-valid-02",
+                vin = "TR-TOFAS-CONNECT-2026-001",
+                actuationType = RemoteActuationType.LOCK_DOORS,
+                issuedAtEpochMs = 1_760_000_015_000L,
+                expiresAtEpochMs = 1_760_000_060_000L,
+                nonceHex = "val-nonce-02",
+            ),
+            signatureBase64 = "c2lnLTI=",
+            publicKeyId = "key-1",
+        )
+
+        store.enqueueSignedCommand(expiredEnvelope)
+        store.enqueueSignedCommand(validEnvelope)
+
+        val dispatchedIds = mutableListOf<String>()
+        val syncEngine = TelemetryOfflineSyncEngine(store) { env ->
+            dispatchedIds.add(env.command.commandId)
+            true
+        }
+
+        val report = syncEngine.flushPendingCommands(nowEpochMs = 1_760_000_025_000L)
+        assertEquals(2, report.totalPending)
+        assertEquals(1, report.expiredDroppedCount)
+        assertEquals(1, report.dispatchedCount)
+        assertEquals(0, report.remainingInQueue)
+        assertEquals(listOf("cmd-valid-02"), dispatchedIds)
+    }
 }
