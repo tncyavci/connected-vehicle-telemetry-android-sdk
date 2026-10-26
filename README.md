@@ -1,6 +1,8 @@
 # Connected Vehicle Telemetry & Remote Actuation Android SDK
 
-**Production-grade, multi-module Android SDK and Jetpack Compose Digital Cockpit for Connected Car / e-Mobility ecosystems — featuring ISO 26262 (ASIL-B) inspired safety interlocks, Ed25519 cryptographic command signing, SAE J2012 OBD-II / CAN-Bus diagnostic fault evaluation, and SQLDelight offline-first telemetry persistence.**
+[![CI](https://github.com/tncyavci/connected-vehicle-telemetry-android-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/tncyavci/connected-vehicle-telemetry-android-sdk/actions/workflows/ci.yml)
+
+**Production-grade, multi-module Android SDK and 120Hz Jetpack Compose Canvas Digital Cockpit for Connected Car / e-Mobility ecosystems — featuring ISO 26262 (ASIL-B) inspired safety interlocks, Ed25519 cryptographic command signing, SAE J2012 OBD-II / CAN-Bus diagnostic fault evaluation, TPMS chassis visualization, and SQLDelight FIFO offline-first telemetry & command queuing.**
 
 Built to address the core architectural challenges of modern automotive telematics platforms (e.g., *Connected Vehicle Companion Apps, Telematics Control Unit [TCU] Gateways, and Fleet Mobility Suites*):
 1. **Zero-Trust Remote Actuation:** How do you guarantee that a remote door-unlock, trunk-release, or HVAC pre-conditioning request originates from an authorized owner device and has not been replayed or tampered with in transit?
