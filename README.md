@@ -63,9 +63,13 @@ Every remote command (`UNLOCK_DOORS`, `OPEN_TRUNK`, `START_HVAC_PRECONDITIONING`
   - **`Uxxxx` (CAN-Bus / UART Network):** e.g., `U0100` (*Lost Communication With ECM/PCM*).
 - Computes a real-time **0–100 Vehicle Health Score** combining active DTC severities, high-voltage battery thermal spikes (`>= 50.0°C`), low tire pressure (`< 1.9 bar`), and low SoC alerts.
 
-### 4. Offline-First SQLDelight Persistence & Ktor Gateway (`:core:database`, `:core:network`)
-- **SQLDelight (`OfflineTelemetryStore`):** Compiled, type-safe SQL tables (`telemetry_frame_entity`, `pending_command_entity`) persisting the latest vehicle telemetry frames and queuing signed command envelopes during offline periods.
+### 4. Offline-First SQLDelight Persistence & FIFO Sync Engine (`:core:database`, `:core:network`)
+- **SQLDelight (`OfflineTelemetryStore` & `TelemetryOfflineSyncEngine`):** Compiled, type-safe SQL tables (`telemetry_frame_entity`, `pending_command_entity`) persisting the latest vehicle telemetry frames and queuing signed command envelopes during offline periods (underground parking / cellular tunnels), with automatic TTL expiration pruning (`EXPIRED_TTL`) and FIFO replay when connectivity returns.
 - **Ktor (`VehicleTelemetryGatewayClient`):** Configured with automatic `HttpRequestRetry` exponential backoff for `5xx` / `429` cellular gateway transients and deterministic `Idempotency-Key` headers.
+
+### 5. 120Hz Jetpack Compose Canvas Digital Cockpit (`:feature:cockpit`)
+- **Custom Draw-Phase Radial Gauges (`CockpitCanvasGauges.kt`):** 240° sweep arc gauges for real-time Vehicle Speed (`km/h`) and HV Battery State of Charge (`%`), executing all arc geometry inside the `Canvas` DrawScope lambda to bypass unnecessary composition and layout passes.
+- **4-Wheel TPMS & Thermal Chassis Diagram (`VehicleTpmsChassisDiagram`):** Top-down vehicle silhouette rendering live 4-wheel tire pressure (`bar`) and temperature (`°C`) cards with automatic `< 2.0 bar` low-pressure alerts.
 
 ---
 
@@ -76,12 +80,12 @@ Every remote command (`UNLOCK_DOORS`, `OPEN_TRUNK`, `START_HVAC_PRECONDITIONING`
 ├── core/
 │   ├── domain/           Pure Kotlin models, SAE J2012 DTC parser, ISO 26262 safety policy, CAN-Bus simulator
 │   ├── crypto/           Google Tink Ed25519 command signer & signature verifier
-│   ├── database/         SQLDelight schema & offline telemetry/command queue store
+│   ├── database/         SQLDelight schema, OfflineTelemetryStore & TelemetryOfflineSyncEngine (FIFO + TTL)
 │   └── network/          Ktor TCU Cloud Gateway client with idempotency & retry policies
 ├── feature/
-│   └── cockpit/          Jetpack Compose Digital Cockpit UI & unidirectional MVI controller
+│   └── cockpit/          120Hz Jetpack Compose Canvas radial gauges, TPMS chassis diagram & MVI controller
 └── docs/
-    └── adr/              Architecture Decision Records (ADR-001 through ADR-003)
+    └── adr/              ADR-001: Asymmetric Ed25519 Signing and ISO 26262 Safety Interlocks
 ```
 
 ---
